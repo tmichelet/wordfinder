@@ -89,7 +89,7 @@ def word_score(
     for pos, l in enumerate(word):
         mult = 1
         plus = 0
-        if playground[pos].startswith('x'):
+        if playground[pos].startswith('*'):
             mult = int(playground[pos][1:])
         if playground[pos].startswith('+'):
             plus = int(playground[pos][1:])
