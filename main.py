@@ -46,14 +46,27 @@ golden_letters = [l for l in sys.argv[3]]
 golden_letters_values = sys.argv[4].split(' ')
 available_letters = Counter(regular_letters + golden_letters)
 playground = sys.argv[5].split(' ')
-debug = len(sys.argv) == 7
+debug = len(sys.argv) in [7, 9]
+conditions = None
+if len(sys.argv) > 7:
+    conditions = [sys.argv[6], sys.argv[7]]
 
 
-def is_word_possible(word, available_letters):
+def is_word_possible(word, available_letters, conditions):
+    error_margin = 1 if '_' in available_letters else 0
+
+    if conditions:
+        pos, letter = int(conditions[1]), conditions[0]
+        if len(word) < pos or word[pos-1] != letter:
+            return False
+
     word_letters = Counter(word)
     for (l, occ) in word_letters.most_common():
         if available_letters[l] < occ:
-            return False
+            if error_margin and occ <= available_letters[l] + error_margin:
+                error_margin -= 1
+            else:
+                return False
     return True
 
 
@@ -65,7 +78,7 @@ for i in range(7, 1, -1):
             word = word[:-1]
             if debug:
                 print 'considering', word
-            if(is_word_possible(word, available_letters)):
+            if(is_word_possible(word, available_letters, conditions)):
                 possible_words.append(word)
 
 if debug:
@@ -81,8 +94,10 @@ def word_score(
     """
         current rule: use all golden letters
     """
+    error_margin = 1 if '_' in regular_letters + golden_letters else 0
+
     for l in golden_letters:
-        if l not in word:
+        if l not in word and l != '_':
             return -1
 
     score = 0
@@ -97,7 +112,14 @@ def word_score(
         try:
             letter_value = regular_letters_values[regular_letters.index(l)]
         except ValueError:
-            letter_value = golden_letters_values[golden_letters.index(l)]
+            try:
+                letter_value = golden_letters_values[golden_letters.index(l)]
+            except ValueError:
+                error_margin -= 1
+                letter_value = 0
+                if error_margin < 0:
+                    raise ValueError
+
         score += mult * int(letter_value) + plus
     return score
 
@@ -114,4 +136,4 @@ for word in possible_words:
 
 keys = sorted(possible_values.keys())[::-1]
 for key in keys[:3]:
-    print key, possible_values[key]
+    print key, list(set(possible_values[key]))
